@@ -9,32 +9,21 @@ using namespace emscripten;
 // using DDM = Optimize<double>;
 // using CDM = Optimize<complex<double>>;
 
-struct ObjectiveWrapper : public wrapper<Objective>
+struct ScalarFunctionWrapper : public wrapper<ScalarFunction>
 {
-  EMSCRIPTEN_WRAPPER(ObjectiveWrapper);
+  EMSCRIPTEN_WRAPPER(ScalarFunctionWrapper);
   // int invoke(double *x)
   // {
   //   return call<int>("invoke", x);
   // }
-  ObjectiveRtn value(unsigned n, vector<double> x, vector<double> grad)
+  double value(unsigned n, int xPtr, int gradPtr)
   {
-    return call<ObjectiveRtn>("value", n, x, grad);
+    return call<double>("value", n, xPtr, gradPtr);
   }
-};
 
-struct Interface
-{
-  virtual void invoke(const std::string &str) = 0;
-
-  virtual ~Interface(){};
-};
-
-struct InterfaceWrapper : public wrapper<Interface>
-{
-  EMSCRIPTEN_WRAPPER(InterfaceWrapper);
-  void invoke(const std::string &str)
+  void memtest(int dataPtr)
   {
-    return call<void>("invoke", str);
+    return call<void>("memtest", dataPtr);
   }
 };
 
@@ -42,22 +31,23 @@ EMSCRIPTEN_BINDINGS(Module)
 {
   register_vector<double>("Vector");
 
-  value_object<Objective::ObjectiveRtn>("ObjectiveRtn")
-      .field("grad", &Objective::ObjectiveRtn::grad)
-      .field("value", &Objective::ObjectiveRtn::value);
+  value_object<OptimizationResult>("OptimizationResult")
+      .field("success", &OptimizationResult::success)
+      .field("x", &OptimizationResult::x)
+      .field("value", &OptimizationResult::value);
 
-  class_<Objective>("Objective")
-      .function("value", &Objective::value, pure_virtual())
-      .allow_subclass<ObjectiveWrapper>("ObjectiveWrapper");
-
-  class_<Interface>("Interface")
-      .function("invoke", &Interface::invoke, pure_virtual())
-      .allow_subclass<InterfaceWrapper>("InterfaceWrapper");
+  class_<ScalarFunction>("ScalarFunction")
+      .function("value", &ScalarFunction::value, pure_virtual())
+      .function("memtest", &ScalarFunction::memtest, pure_virtual())
+      .allow_subclass<ScalarFunctionWrapper>("ScalarFunctionWrapper");
 
   // Optimize
   class_<Optimize<double>>("Optimize")
-      .constructor<Objective &>()
-      .function("doubleTest", &Optimize<double>::doubleTest, allow_raw_pointer<double>());
-  // .class_function("setCallback", &DenseMatrix<double>::setCallback, allow_raw_pointers())
-  // emscripten::val
+      .constructor<size_t>()
+      .function("set_lower_bounds", &Optimize<double>::set_lower_bounds)
+      .function("set_upper_bounds", &Optimize<double>::set_upper_bounds)
+      .function("set_min_objective", &Optimize<double>::set_min_objective)
+      .function("add_inequality_constraint", &Optimize<double>::add_inequality_constraint)
+      .function("optimize", &Optimize<double>::optimize)
+      .function("benchmark", &Optimize<double>::benchmark);
 }

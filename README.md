@@ -1,4 +1,4 @@
-# Nlopt
+# nlopt-js
 
 nlopt-js is a port of the great [nlopt](https://nlopt.readthedocs.io/en/latest/) C++ linear algebra library
 

@@ -11,36 +11,32 @@
 using namespace std::chrono;
 
 using namespace std;
-// using emscripten::val = void (*)(void);
 
-// class Objective
-// {
-// public:
-//   virtual int invoke(const double *x) = 0;
-// };
-
-struct Objective
+struct ScalarFunction
 {
-  typedef struct
-  {
-    vector<double> grad;
-    double value;
-  } ObjectiveRtn;
+  virtual void memtest(int dataPtr) = 0;
 
-  virtual ObjectiveRtn value(unsigned n, vector<double> x, vector<double> grad) = 0;
+  virtual double value(unsigned n, int xPtr, int gradPtr) = 0;
 
   static double _value(unsigned n, const double *x, double *grad, void *my_func_data)
   {
-    vector<double> xVec(x, x + n);
-    vector<double> gradVec(grad, grad + n);
-    ObjectiveRtn rtn = ((Objective *)my_func_data)->value(n, xVec, gradVec);
-    if (grad)
-      std::copy(rtn.grad.begin(), rtn.grad.end(), grad);
-    return rtn.value;
+    return ((ScalarFunction *)my_func_data)->value(n, (int)x, (int)grad);
   }
 
-  virtual ~Objective(){};
+  virtual ~ScalarFunction(){};
 };
+
+typedef struct
+{
+  bool success;
+  vector<double> x;
+  double value;
+} OptimizationResult;
+
+typedef struct
+{
+  double a, b;
+} my_constraint_data;
 
 double myfunc(unsigned n, const double *x, double *grad, void *my_func_data)
 {
@@ -48,14 +44,10 @@ double myfunc(unsigned n, const double *x, double *grad, void *my_func_data)
   {
     grad[0] = 0.0;
     grad[1] = 0.5 / sqrt(x[1]);
+    // cout << "grad: " << grad[0] << "," << grad[1] << " val " << sqrt(x[1]) << endl;
   }
   return sqrt(x[1]);
 }
-
-typedef struct
-{
-  double a, b;
-} my_constraint_data;
 
 double myconstraint(unsigned n, const double *x, double *grad, void *data)
 {
@@ -65,6 +57,7 @@ double myconstraint(unsigned n, const double *x, double *grad, void *data)
   {
     grad[0] = 3 * a * (a * x[0] + b) * (a * x[0] + b);
     grad[1] = -1.0;
+    // cout << "grad: " << grad[0] << "," << grad[1] << " val " << ((a * x[0] + b) * (a * x[0] + b) * (a * x[0] + b) - x[1]) << endl;
   }
   return ((a * x[0] + b) * (a * x[0] + b) * (a * x[0] + b) - x[1]);
 }
@@ -78,72 +71,83 @@ typedef struct
 template <typename T>
 class Optimize
 {
+protected:
+  nlopt::opt opt;
+
 public:
-  Optimize<T>(Objective &objective)
+  Optimize<T>(size_t n)
   {
-    nlopt::opt opt(nlopt::LD_MMA, 2);
+    opt = nlopt::opt(nlopt::LD_MMA, n);
+  }
+
+  void benchmark()
+  {
     vector<double> lb = {-HUGE_VAL, 0};
     opt.set_lower_bounds(lb);
-
-    auto start = high_resolution_clock::now();
-
-    opt.set_min_objective(Objective::_value, &objective);
+    opt.set_min_objective(myfunc, NULL);
+    opt.set_xtol_rel(1e-4);
     my_constraint_data data[2] = {{2, 0}, {-1, 1}};
     opt.add_inequality_constraint(myconstraint, &data[0], 1e-8);
     opt.add_inequality_constraint(myconstraint, &data[1], 1e-8);
-    opt.set_xtol_rel(1e-4);
+
     vector<double> x(2);
     x[0] = 1.234;
     x[1] = 5.678;
     double minf;
 
-    for (size_t k = 0; k < 100000;  k++)
+    try
     {
-      try
-      {
-        nlopt::result result = opt.optimize(x, minf);
-        // cout << "found minimum at f(" << x[0] << "," << x[1] << ") = " << minf << endl;
-      }
-      catch (exception &e)
-      {
-        // cout << "nlopt failed: " << e.what() << endl;
-      }
+      nlopt::result result = opt.optimize(x, minf);
+      // cout << "found minimum at f(" << x[0] << "," << x[1] << ") = " << minf << endl;
     }
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(stop - start);
-    cout << "duration: " << duration.count() << "us" << endl;
-
-
-    // SECOND FUNCTION
-    start = high_resolution_clock::now();
-    opt.set_min_objective(myfunc, &objective);
-    opt.add_inequality_constraint(myconstraint, &data[0], 1e-8);
-    opt.add_inequality_constraint(myconstraint, &data[1], 1e-8);
-    opt.set_xtol_rel(1e-4);
-    x[0] = 1.234;
-    x[1] = 5.678;
-    for (size_t k = 0; k < 100000;  k++)
+    catch (exception &e)
     {
-      try
-      {
-        nlopt::result result = opt.optimize(x, minf);
-        // cout << "found minimum at f(" << x[0] << "," << x[1] << ") = " << minf << endl;
-      }
-      catch (exception &e)
-      {
-        // cout << "nlopt failed: " << e.what() << endl;
-      }
+      cout << "nlopt failed: " << e.what() << endl;
     }
-    stop = high_resolution_clock::now();
-    duration = duration_cast<microseconds>(stop - start);
-    cout << "duration: " << duration.count() << "us" << endl;
-
-
   }
 
-  void doubleTest(double *array)
+  void set_lower_bounds(vector<double> lb)
   {
-    cout << "array test: " << array[1] << endl;
+    opt.set_lower_bounds(lb);
+  }
+
+  void set_upper_bounds(vector<double> ub)
+  {
+    opt.set_upper_bounds(ub);
+  }
+
+  void set_min_objective(ScalarFunction &scalarFunction, double xtol)
+  {
+    // double data[] = {2, 3};
+    // scalarFunction.memtest((int)data);
+    // cout << "data result: " << data[0] << "," << data[1] << endl;
+
+    opt.set_min_objective(ScalarFunction::_value, &scalarFunction);
+    opt.set_xtol_rel(xtol);
+  }
+
+  void add_inequality_constraint(ScalarFunction &scalarFunction, double tol)
+  {
+    opt.add_inequality_constraint(ScalarFunction::_value, &scalarFunction, tol);
+  }
+
+  OptimizationResult optimize(vector<double> x0)
+  {
+    double minf;
+    try
+    {
+      nlopt::result result = opt.optimize(x0, minf);
+      return (OptimizationResult){
+          .success = true,
+          .x = x0,
+          .value = minf};
+    }
+    catch (exception &e)
+    {
+      cout << "nlopt failed: " << e.what() << endl;
+      return (OptimizationResult){
+          .success = false};
+    }
   }
 };
 

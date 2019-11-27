@@ -103,21 +103,29 @@ function initClass(Class) {
  * Add helper functions TODO: extract in file
  */
 function addHelpers(Module) {
+  // Scalar function getter
+  Module.ScalarFunction.fromLambda = (fun) => {
+    return Module.ScalarFunction.implement({
+      value: (n, xPtr, gradPtr) => {
+        const x = new Float64Array(Module.HEAPF64.buffer, xPtr, n);
+        const grad = gradPtr ? new Float64Array(Module.HEAPF64.buffer, gradPtr, n) : null;
+        return fun(x, grad)
+      }
+    })
+  }
 }
 
-
-const defExport = {
-  GC: GarbageCollector,
-  ready: () => { } // Override if needed
-}
+Module.GC = GarbageCollector,
+  Module.ready = () => { } // Override if needed
 
 Module.onRuntimeInitialized = _ => {
-  const classes = ["Optimize", "Objective", "Vector"]
+  // Copy classed over
+  const classes = ["Optimize", "ScalarFunction", "Vector"]
   classes.forEach(className => {
-    defExport[className] = initClass(Module[className])
+    Module[className] = initClass(Module[className])
   })
-  addHelpers(defExport);
-  defExport.ready()
+  addHelpers(Module);
+  Module.ready()
 }
 
-module.exports = defExport;
+module.exports = Module;
