@@ -103,13 +103,32 @@ function initClass(Class) {
  * Add helper functions TODO: extract in file
  */
 function addHelpers(Module) {
-  // Scalar function getter
+  // Vector helper
+  Module.Vector.fromArray = function (arr) {
+    const v = new Module.Vector();
+    arr.forEach(val => v.push_back(val));
+    return v;
+  }
+
+  // Scalar function helper
   Module.ScalarFunction.fromLambda = (fun) => {
     return Module.ScalarFunction.implement({
       value: (n, xPtr, gradPtr) => {
         const x = new Float64Array(Module.HEAPF64.buffer, xPtr, n);
         const grad = gradPtr ? new Float64Array(Module.HEAPF64.buffer, gradPtr, n) : null;
         return fun(x, grad)
+      }
+    })
+  }
+
+  // Scalar function helper
+  Module.VectorFunction.fromLambda = (fun) => {
+    return Module.VectorFunction.implement({
+      value: (m, rPtr, n, xPtr, gradPtr) => {
+        const x = new Float64Array(Module.HEAPF64.buffer, xPtr, n);
+        const r = new Float64Array(Module.HEAPF64.buffer, rPtr, m);
+        const grad = gradPtr ? new Float64Array(Module.HEAPF64.buffer, gradPtr, n) : null;
+        return fun(x, grad, r)
       }
     })
   }
@@ -120,7 +139,7 @@ Module.GC = GarbageCollector,
 
 Module.onRuntimeInitialized = _ => {
   // Copy classed over
-  const classes = ["Optimize", "ScalarFunction", "Vector"]
+  const classes = ["Vector", "Optimize", "ScalarFunction", "VectorFunction"]
   classes.forEach(className => {
     Module[className] = initClass(Module[className])
   })
