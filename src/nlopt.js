@@ -1,26 +1,16 @@
 /* eslint-disable */
-const BROWSER = typeof window === 'object'
-
-let Module = {}
-if (BROWSER) {
-  const wasm = require('./nlopt_gen.wasm')
-  Module = { wasmBinary: wasm }
-  window.Module = Module
-  require('./nlopt_gen.js')
-} else {
-  Module = require('./nlopt_gen.js')
-}
-const HashMap = require('./hashmap.js')
-
+import HashMap from 'hashmap'
+import nlopt_gen from '../build/nlopt_gen.js'
+import wasm from '../build/nlopt_gen.wasm'
+const Module = nlopt_gen({
+  wasmBinary: wasm
+});
 
 function getStaticMethods(Class) {
   return Object.getOwnPropertyNames(Class).filter(prop => prop !== "constructor" && typeof Class[prop] === "function");
 }
 
 class GarbageCollector {
-  static objects = new Set()
-  static whitelist = new HashMap() // Reference count
-
   static add(...addList) {
     addList.flat(Infinity).forEach(obj => {
       GarbageCollector.objects.add(obj)
@@ -66,13 +56,18 @@ class GarbageCollector {
     ref[name] = newObj
   }
 }
+// Add static members
+GarbageCollector.objects = new Set();
+GarbageCollector.whitelist = new HashMap(); // Reference count
+
 
 /**
  * Equip class to add constructor feedback
+ * @param  {Set} classes Set of all the classes names
  * @param  {object} Class class to wrap
  * @returns {object} wrapped class
  */
-function initClass(Class) {
+function initClass(classes, Class) {
   const NewClass = function (...args) {
     const instance = new Class(...args)
     GarbageCollector.add(instance)
@@ -82,10 +77,11 @@ function initClass(Class) {
   for (let idx in arr) {
     let obj = arr[idx]
     getStaticMethods(obj).forEach(method => {
+      // console.log(`Wrapping reg method ${method} of ${Class}`)
       const fun = obj[method]
       obj[method] = function (...args) {
         const rtn = fun.call(this, ...args)
-        if (rtn instanceof Class) {
+        if (rtn && classes.has(rtn.constructor.name)) {
           GarbageCollector.add(rtn)
         }
         return rtn
@@ -94,7 +90,9 @@ function initClass(Class) {
   }
 
   // Class.prototype.constructor = NewClass TODO: control
-  getStaticMethods(Class).forEach(method => { NewClass[method] = Class[method]; })
+  getStaticMethods(Class).forEach(method => {
+    NewClass[method] = Class[method];
+  })
   NewClass.prototype = Class.prototype
   return NewClass
 }
@@ -102,17 +100,17 @@ function initClass(Class) {
 /**
  * Add helper functions TODO: extract in file
  */
-function addHelpers(Module) {
+function addHelpers(nlopt) {
   // Vector helper
-  Module.Vector.fromArray = function (arr) {
-    const v = new Module.Vector();
+  nlopt.Vector.fromArray = function (arr) {
+    const v = new nlopt.Vector();
     arr.forEach(val => v.push_back(val));
     return v;
   }
 
   // Scalar function helper
-  Module.ScalarFunction.fromLambda = (fun) => {
-    return Module.ScalarFunction.implement({
+  nlopt.ScalarFunction.fromLambda = (fun) => {
+    return nlopt.ScalarFunction.implement({
       value: (n, xPtr, gradPtr) => {
         const x = new Float64Array(Module.HEAPF64.buffer, xPtr, n);
         const grad = gradPtr ? new Float64Array(Module.HEAPF64.buffer, gradPtr, n) : null;
@@ -122,29 +120,32 @@ function addHelpers(Module) {
   }
 
   // Scalar function helper
-  Module.VectorFunction.fromLambda = (fun) => {
-    return Module.VectorFunction.implement({
+  nlopt.VectorFunction.fromLambda = (fun) => {
+    return nlopt.VectorFunction.implement({
       value: (m, rPtr, n, xPtr, gradPtr) => {
         const x = new Float64Array(Module.HEAPF64.buffer, xPtr, n);
         const r = new Float64Array(Module.HEAPF64.buffer, rPtr, m);
-        const grad = gradPtr ? new Float64Array(Module.HEAPF64.buffer, gradPtr, n) : null;
+        const grad = gradPtr ? new Float64Array(Module.HEAPF64.buffer, gradPtr, n * m) : null;
         return fun(x, grad, r)
       }
     })
   }
 }
 
-Module.GC = GarbageCollector,
-  Module.ready = () => { } // Override if needed
-
-Module.onRuntimeInitialized = _ => {
-  // Copy classed over
-  const classes = ["Vector", "Optimize", "ScalarFunction", "VectorFunction"]
-  classes.forEach(className => {
-    Module[className] = initClass(Module[className])
-  })
-  addHelpers(Module);
-  Module.ready()
+const nlopt = {
+  GC: GarbageCollector
 }
 
-module.exports = Module;
+nlopt.ready = new Promise(resolve => {
+  Module.onRuntimeInitialized = () => {
+    const classes = new Set(["Vector", "Optimize", "ScalarFunction", "VectorFunction"])
+    classes.forEach(className => {
+      nlopt[className] = initClass(classes, Module[className])
+    })
+    nlopt.Algorithm = Module.Algorithm
+    addHelpers(nlopt);
+    resolve(nlopt)
+  }
+})
+
+export default nlopt

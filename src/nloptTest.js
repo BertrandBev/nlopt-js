@@ -1,22 +1,9 @@
-const Module = require('../nlopt-js/nlopt.js');
+const nlopt = require('../dist/index.js');
 
-
-Module.ready = _ => {
-  const Optimize = Module.Optimize;
-
-  // let d = new Date()
-  // console.log('C++: ', (new Date() - d), 'ms')
-  // d = new Date()
-  // for (let k = 0; k < 1000; k++) {
-  // console.log('JS: ', (new Date() - d), 'ms')
-
-  // C++
-  let opt = new Optimize(2);
-  opt.benchmark()
-
+function test() {
   // JS
-  opt = new Optimize(2);
-  opt.set_min_objective(Module.ScalarFunction.fromLambda((x, grad) => {
+  const opt = new nlopt.Optimize(nlopt.Algorithm.LD_SLSQP, 2);
+  opt.set_min_objective(nlopt.ScalarFunction.fromLambda((x, grad) => {
     if (grad) {
       grad[0] = 0
       grad[1] = 0.5 / Math.sqrt(x[1])
@@ -25,7 +12,7 @@ Module.ready = _ => {
   }), 1e-4)
 
   // const p1 = { a: 2, b: 0 }
-  // opt.add_inequality_constraint(Module.ScalarFunction.fromLambda((x, grad) => {
+  // opt.add_inequality_constraint(nlopt.ScalarFunction.fromLambda((x, grad) => {
   //   if (grad) {
   //     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2)
   //     grad[1] = -1.0
@@ -34,7 +21,7 @@ Module.ready = _ => {
   // }), 1e-8)
 
   // const p2 = { a: -1, b: 1 }
-  // opt.add_inequality_constraint(Module.ScalarFunction.fromLambda((x, grad) => {
+  // opt.add_inequality_constraint(nlopt.ScalarFunction.fromLambda((x, grad) => {
   //   if (grad) {
   //     grad[0] = 3 * p2.a * Math.pow(p2.a * x[0] + p2.b, 2)
   //     grad[1] = -1.0
@@ -45,7 +32,7 @@ Module.ready = _ => {
   // Vector constraint
   const p1 = { a: 2, b: 0 }
   const p2 = { a: -1, b: 1 }
-  opt.add_inequality_mconstraint(Module.VectorFunction.fromLambda((x, grad, r) => {
+  opt.add_equality_mconstraint(nlopt.VectorFunction.fromLambda((x, grad, r) => {
     if (grad) {
       grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2)
       grad[1] = -1.0
@@ -54,11 +41,29 @@ Module.ready = _ => {
     }
     r[0] = (Math.pow(p1.a * x[0] + p1.b, 3) - x[1])
     r[1] = (Math.pow(p2.a * x[0] + p2.b, 3) - x[1])
-  }), Module.Vector.fromArray([1e-8, 1e-8]))
+  }), nlopt.Vector.fromArray([1e-8, 1e-8]))
 
 
-  opt.set_lower_bounds(Module.Vector.fromArray([-1e500, 0]))
-  const res = opt.optimize(Module.Vector.fromArray([1.234, 5.678]))
-  console.log(res.x.get(0), res.x.get(1), res.value)
-  Module.GC.flush()
-};
+  opt.set_lower_bounds(nlopt.Vector.fromArray([-1e500, 1e-8]))
+  const res = opt.optimize(nlopt.Vector.fromArray([1.234, 5.678]))
+  console.log('res', res)
+  // console.log(res.x.get(0), res.x.get(1), res.value)
+}
+
+nlopt.ready.then(() => {
+  // console.log('nlopt', nlopt, 'alg', nlopt.Algorithm.LD_SLSQP)
+  // let d = new Date()
+  // console.log('C++: ', (new Date() - d), 'ms')
+
+  // C++
+  let opt = new nlopt.Optimize(nlopt.Algorithm.LD_SLSQP, 2);
+  opt.benchmark()
+
+  // JS
+  for (let k = 0; k < 100; k++) {
+    test()
+    test()
+    test()
+  }
+  nlopt.GC.flush()
+});

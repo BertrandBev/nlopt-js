@@ -1,6 +1,6 @@
 # nlopt-js
 
-nlopt-js is a port of the great [nlopt](https://nlopt.readthedocs.io/en/latest/) C++ linear algebra library
+nlopt-js is a port of the [nlopt](https://nlopt.readthedocs.io/en/latest/) C++ optimization library
 
 It uses a WebAssembly compiled subset of the [nlopt](https://nlopt.readthedocs.io/en/latest/) library, and implements a garbage collection mechanism to manage memory
 
@@ -26,6 +26,7 @@ lib/nlopt
 Now build a bytecode shared library
 
 ```bash
+mkdir build; cd build
 emconfigure cmake .. -DEMSCRIPTEN_GENERATE_BITCODE_STATIC_LIBRARIES=1
 emmake make
 ```
@@ -35,5 +36,6 @@ It should generate a shared library bytecode file named `libnlopt.bc`
 Now to compile the wasm binary, run the following command
 
 ```bash
-emcc -I ./lib/nlopt/build/src/api/ --pre-js src/pre.js --bind -o nlopt-js/nlopt_gen.js src/embind.cc -Isrc ./lib/nlopt/build/libnlopt.bc
+mkdir build
+emcc -I lib/nlopt/build/src/api/ --bind -o build/nlopt_gen.js src/cpp/embind.cc -Isrc lib/nlopt/build/libnlopt.bc -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=0 -O3 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1
 ```

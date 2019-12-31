@@ -31,6 +31,10 @@ struct VectorFunction
   static void _value(unsigned m, double *result, unsigned n, const double *x, double *grad, void *my_func_data)
   {
     ((VectorFunction *)my_func_data)->value(m, (int)result, n, (int)x, (int)grad);
+    // cout << "C++ " << x[0] << ", " << x[1] << ", " << x[n - 2] << ", " << x[n - 1] << endl;
+    // if (grad)
+    //   cout << "C++ GRAD " << grad[0] << ", " << grad[m * n - 1] << endl;
+    // cout << "C++ RES " << result[0] << ", " << result[m - 1] << endl;
   }
 
   virtual ~VectorFunction(){};
@@ -85,35 +89,14 @@ protected:
   nlopt::opt opt;
 
 public:
-  Optimize<T>(size_t n)
+  Optimize<T>(nlopt::algorithm algorithm, size_t n)
   {
-    opt = nlopt::opt(nlopt::LN_COBYLA, n);
+    opt = nlopt::opt(algorithm, n);
   }
 
-  void benchmark()
+  void set_local_optimizer(Optimize &local)
   {
-    try
-    {
-      vector<double> lb = {-HUGE_VAL, 0};
-      opt.set_lower_bounds(lb);
-      opt.set_min_objective(myfunc, NULL);
-      opt.set_xtol_rel(1e-4);
-      my_constraint_data data[2] = {{2, 0}, {-1, 1}};
-      opt.add_inequality_constraint(myconstraint, &data[0], 1e-8);
-      opt.add_inequality_constraint(myconstraint, &data[1], 1e-8);
-
-      vector<double> x(2);
-      x[0] = 1.234;
-      x[1] = 5.678;
-      double minf;
-
-      nlopt::result result = opt.optimize(x, minf);
-      cout << "found minimum at f(" << x[0] << "," << x[1] << ") = " << minf << endl;
-    }
-    catch (exception &e)
-    {
-      cout << "nlopt failed: " << e.what() << endl;
-    }
+    opt.set_local_optimizer(local.opt);
   }
 
   void set_lower_bounds(vector<double> lb)
@@ -157,6 +140,11 @@ public:
     opt.set_maxtime(maxtime);
   }
 
+  void set_maxeval(int maxeval)
+  {
+    opt.set_maxeval(maxeval);
+  }
+
   OptimizationResult optimize(vector<double> x0)
   {
     double minf;
@@ -175,9 +163,33 @@ public:
           .success = false};
     }
   }
-};
 
-// template <typename T>
-// emscripten::val DenseMatrix<T>::callback = emscripten::val::null();
+  // BENCHMARK
+  void benchmark()
+  {
+    try
+    {
+      vector<double> lb = {-HUGE_VAL, 0};
+      opt.set_lower_bounds(lb);
+      opt.set_min_objective(myfunc, NULL);
+      opt.set_xtol_rel(1e-4);
+      my_constraint_data data[2] = {{2, 0}, {-1, 1}};
+      opt.add_inequality_constraint(myconstraint, &data[0], 1e-8);
+      opt.add_inequality_constraint(myconstraint, &data[1], 1e-8);
+
+      vector<double> x(2);
+      x[0] = 1.234;
+      x[1] = 5.678;
+      double minf;
+
+      nlopt::result result = opt.optimize(x, minf);
+      cout << "found minimum at f(" << x[0] << "," << x[1] << ") = " << minf << endl;
+    }
+    catch (exception &e)
+    {
+      cout << "nlopt failed: " << e.what() << endl;
+    }
+  }
+};
 
 #endif // OPTIMIZE
