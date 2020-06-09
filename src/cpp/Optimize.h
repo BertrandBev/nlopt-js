@@ -31,10 +31,6 @@ struct VectorFunction
   static void _value(unsigned m, double *result, unsigned n, const double *x, double *grad, void *my_func_data)
   {
     ((VectorFunction *)my_func_data)->value(m, (int)result, n, (int)x, (int)grad);
-    // cout << "C++ " << x[0] << ", " << x[1] << ", " << x[n - 2] << ", " << x[n - 1] << endl;
-    // if (grad)
-    //   cout << "C++ GRAD " << grad[0] << ", " << grad[m * n - 1] << endl;
-    // cout << "C++ RES " << result[0] << ", " << result[m - 1] << endl;
   }
 
   virtual ~VectorFunction(){};
@@ -58,7 +54,6 @@ double myfunc(unsigned n, const double *x, double *grad, void *my_func_data)
   {
     grad[0] = 0.0;
     grad[1] = 0.5 / sqrt(x[1]);
-    // cout << "grad: " << grad[0] << "," << grad[1] << " val " << sqrt(x[1]) << endl;
   }
   return sqrt(x[1]);
 }
@@ -71,7 +66,6 @@ double myconstraint(unsigned n, const double *x, double *grad, void *data)
   {
     grad[0] = 3 * a * (a * x[0] + b) * (a * x[0] + b);
     grad[1] = -1.0;
-    // cout << "grad: " << grad[0] << "," << grad[1] << " val " << ((a * x[0] + b) * (a * x[0] + b) * (a * x[0] + b) - x[1]) << endl;
   }
   return ((a * x[0] + b) * (a * x[0] + b) * (a * x[0] + b) - x[1]);
 }

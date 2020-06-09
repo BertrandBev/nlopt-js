@@ -1,8 +1,9 @@
 const nlopt = require('../dist/index.js');
 
 function test() {
-  // JS
-  const opt = new nlopt.Optimize(nlopt.Algorithm.LD_SLSQP, 2);
+  // JS 
+  // LD_SLSQP (all) LD_AUGLAG (w/ LD_LBFGS, LD_MMA, LD_COBYLA) (LD_AUGLAG_EQ for MMA | COBYLA)
+  const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
   opt.set_min_objective(nlopt.ScalarFunction.fromLambda((x, grad) => {
     if (grad) {
       grad[0] = 0
@@ -45,6 +46,12 @@ function test() {
 
 
   opt.set_lower_bounds(nlopt.Vector.fromArray([-1e500, 1e-8]))
+
+  // Create local optimizer
+  const localOpt = new nlopt.Optimize(nlopt.Algorithm.LD_LBFGS, 2);
+  opt.set_local_optimizer(localOpt);
+
+
   const res = opt.optimize(nlopt.Vector.fromArray([1.234, 5.678]))
   console.log('res', res)
   // console.log(res.x.get(0), res.x.get(1), res.value)
