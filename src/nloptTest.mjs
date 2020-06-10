@@ -1,4 +1,5 @@
-const nlopt = require('../dist/index.js');
+import nlopt from '../dist/index.js'
+// import nlopt from './nlopt.mjs'
 
 function test() {
   // JS 

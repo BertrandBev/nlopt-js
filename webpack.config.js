@@ -2,7 +2,7 @@ const path = require('path');
 
 const config = {
   mode: 'production',
-  entry: './src/nlopt.js',
+  entry: './src/nlopt.mjs',
   context: path.resolve(__dirname, "."),
   module: {
     rules: [
