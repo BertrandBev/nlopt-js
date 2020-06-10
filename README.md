@@ -27,7 +27,8 @@ Now build a bytecode shared library
 
 ```bash
 mkdir build; cd build
-emconfigure cmake .. -DEMSCRIPTEN_GENERATE_BITCODE_STATIC_LIBRARIES=1
+# emconfigure cmake .. -DEMSCRIPTEN_GENERATE_BITCODE_STATIC_LIBRARIES=1
+emcmake cmake ..
 emmake make
 ```
 
@@ -37,5 +38,5 @@ Now to compile the wasm binary, run the following command
 
 ```bash
 mkdir build
-emcc -I lib/nlopt/build/src/api/ --bind -o build/nlopt_gen.js src/cpp/embind.cc -Isrc lib/nlopt/build/libnlopt.bc -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=0 -O3
+emcc -I lib/nlopt/build -I lib/nlopt/src/api  -Isrc lib/nlopt/build/libnlopt.a -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=0 -O3 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 --bind -o build/nlopt_gen.js src/cpp/embind.cc 
 ```

@@ -2,7 +2,6 @@
 #include <vector>
 
 #include "Optimize.h"
-#include <nlopt.hpp>
 
 using namespace std;
 using namespace emscripten;

@@ -138,7 +138,12 @@ const nlopt = {
 
 nlopt.ready = new Promise(resolve => {
   Module.onRuntimeInitialized = () => {
-    const classes = new Set(["Vector", "Optimize", "ScalarFunction", "VectorFunction"])
+    const classes = new Set([
+      "Vector",
+      "Optimize",
+      "ScalarFunction",
+      "VectorFunction",
+    ])
     classes.forEach(className => {
       nlopt[className] = initClass(classes, Module[className])
     })
