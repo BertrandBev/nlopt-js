@@ -40,3 +40,5 @@ Now to compile the wasm binary, run the following command
 mkdir build
 emcc -I lib/nlopt/build -I lib/nlopt/src/api  -Isrc lib/nlopt/build/libnlopt.a -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=0 -O3 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 --bind -o build/nlopt_gen.js src/cpp/embind.cc 
 ```
+
+emcc -I lib/nlopt/build -I lib/nlopt/src/api  -Isrc lib/nlopt/build/libnlopt.a -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 --bind -o build/nlopt_gen.js src/cpp/embind.cc 

@@ -18,6 +18,13 @@ function addHelpers(nlopt) {
     return v;
   }
 
+  nlopt.Vector.toArray = function (vec) {
+    const a = new Array(vec.size());
+    for (let k = 0; k < vec.size(); k++)
+      a[k] = vec.get(k);
+    return a;
+  }
+
   // Scalar function helper
   nlopt.ScalarFunction.fromLambda = (fun) => {
     return nlopt.ScalarFunction.implement({
@@ -40,6 +47,39 @@ function addHelpers(nlopt) {
       }
     })
   }
+
+  // Simplify arguments syntax of certain functions
+  const pipes = {
+    setLowerBounds: [nlopt.Vector],
+    setUpperBounds: [nlopt.Vector],
+    setMinObjective: [nlopt.ScalarFunction, null],
+    setMaxObjective: [nlopt.ScalarFunction, null],
+    addInequalityConstraint: [nlopt.ScalarFunction, null],
+    addEqualityConstraint: [nlopt.ScalarFunction, null],
+    addInequalityMConstraint: [nlopt.VectorFunction, nlopt.Vector],
+    addEqualityMConstraint: [nlopt.VectorFunction, nlopt.Vector],
+    optimize: [nlopt.Vector],
+  };
+  Object.keys(pipes).forEach((method) => {
+    const pipe = pipes[method];
+    const fun = nlopt.Optimize.prototype[method]
+    nlopt.Optimize.prototype[method] = function (...args) {
+      for (let k = 0; k < args.length; k++) {
+        const rep = pipe[k];
+        if (rep == nlopt.Vector)
+          args[k] = nlopt.Vector.fromArray(args[k]);
+        if (rep == nlopt.VectorFunction)
+          args[k] == nlopt.VectorFunction.fromLambda(args[k]);
+        if (rep == nlopt.ScalarFunction) {
+          args[k] = nlopt.ScalarFunction.fromLambda(args[k]);
+        }
+      }
+      const rtn = fun.call(this, ...args);
+      if (method == 'optimize' && rtn.x instanceof nlopt.Vector)
+        rtn.x = nlopt.Vector.toArray(rtn.x);
+      return rtn;
+    }
+  });
 }
 
 const nlopt = {

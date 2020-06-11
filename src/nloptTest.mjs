@@ -5,31 +5,31 @@ function test() {
   // JS 
   // LD_SLSQP (all) LD_AUGLAG (w/ LD_LBFGS, LD_MMA, LD_COBYLA) (LD_AUGLAG_EQ for MMA | COBYLA)
   const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
-  opt.setMinObjective(nlopt.ScalarFunction.fromLambda((x, grad) => {
+  opt.setMinObjective((x, grad) => {
     if (grad) {
       grad[0] = 0
       grad[1] = 0.5 / Math.sqrt(x[1])
     }
     return Math.sqrt(x[1])
-  }), 1e-4)
+  }, 1e-4)
 
   // const p1 = { a: 2, b: 0 }
-  // opt.addInequalityConstraint(nlopt.ScalarFunction.fromLambda((x, grad) => {
+  // opt.addInequalityConstraint((x, grad) => {
   //   if (grad) {
   //     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2)
   //     grad[1] = -1.0
   //   }
   //   return (Math.pow(p1.a * x[0] + p1.b, 3) - x[1])
-  // }), 1e-8)
+  // }, 1e-8)
 
   // const p2 = { a: -1, b: 1 }
-  // opt.addInequalityConstraint(nlopt.ScalarFunction.fromLambda((x, grad) => {
+  // opt.addInequalityConstraint((x, grad) => {
   //   if (grad) {
   //     grad[0] = 3 * p2.a * Math.pow(p2.a * x[0] + p2.b, 2)
   //     grad[1] = -1.0
   //   }
   //   return (Math.pow(p2.a * x[0] + p2.b, 3) - x[1])
-  // }), 1e-8)
+  // }, 1e-8)
 
   // Vector constraint
   const p1 = { a: 2, b: 0 }
@@ -43,17 +43,17 @@ function test() {
     }
     r[0] = (Math.pow(p1.a * x[0] + p1.b, 3) - x[1])
     r[1] = (Math.pow(p2.a * x[0] + p2.b, 3) - x[1])
-  }), nlopt.Vector.fromArray([1e-8, 1e-8]))
+  }), [1e-8, 1e-8]);
 
 
-  opt.setLowerBounds(nlopt.Vector.fromArray([-1e500, 1e-8]))
+  opt.setLowerBounds([-1e500, 1e-8]);
 
   // Create local optimizer
   const localOpt = new nlopt.Optimize(nlopt.Algorithm.LD_LBFGS, 2);
   opt.setLocalOptimizer(localOpt);
 
 
-  const res = opt.optimize(nlopt.Vector.fromArray([1.234, 5.678]))
+  const res = opt.optimize([1.234, 5.678]);
   console.log('res', res)
   // console.log(res.x.get(0), res.x.get(1), res.value)
 }

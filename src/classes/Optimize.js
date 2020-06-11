@@ -11,7 +11,7 @@ class Optimize {
    */
   constructor(algorithm, n) { }
 
-  
+
   /**
    * Specify the objective function to maximize
    * The objective function should be of the form
@@ -29,9 +29,9 @@ class Optimize {
    *     grad[1] = 0.5 / Math.sqrt(x[1])
    *   }
    *   return Math.sqrt(x[1])
-   * }, 1e-4)
+   * }, 1e-4);
    */
-  setMaxObjective(fun, tol) {}
+  setMaxObjective(fun, tol) { }
 
   /**
    * Specify the objective function to minimize
@@ -39,7 +39,7 @@ class Optimize {
    * @param {fun} fun - Objective function
    * @param {number} tol - Maximization tolerance
    */
-  setMinObjective(fun, tol) {}
+  setMinObjective(fun, tol) { }
 
   /**
    * Specify an upper bound contraint on the optimization parameters
@@ -48,7 +48,7 @@ class Optimize {
    * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
    * opt.setUpperBounds([2, 5]);
    */
-  setUpperBounds(bounds) {}
+  setUpperBounds(bounds) { }
 
   /**
    * Specify a lower bound contraint on the optimization parameters
@@ -57,7 +57,7 @@ class Optimize {
    * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
    * opt.setLowerBounds([-2, -5]);
    */
-  setLowerBounds(bounds) {}
+  setLowerBounds(bounds) { }
 
   /**
    * Add a inequality constraint can be specified. the parameters are the same as 'setMinObjective' and 'setMaxObjective'
@@ -72,16 +72,16 @@ class Optimize {
    *     grad[1] = -1.0
    *   }
    *   return (Math.pow(p1.a * x[0] + p1.b, 3) - x[1])
-   * }, 1e-8)
+   * }, 1e-8);
    */
-  addInequalityConstraint(fun, tol) {}
+  addInequalityConstraint(fun, tol) { }
 
   /**
    * Add a equality constraint. The parameters are the same as 'addInequalityConstraint'
    * @param {Function} fun - Constraint function
    * @param {number} tol - Tolerance
    */
-  addEqualityConstraint(fun, tol) {}
+  addEqualityConstraint(fun, tol) { }
 
   /**
    * Add a vector valued inequality constraints
@@ -106,26 +106,57 @@ class Optimize {
    *   }
    *   r[0] = (Math.pow(p1.a * x[0] + p1.b, 3) - x[1])
    *   r[1] = (Math.pow(p2.a * x[0] + p2.b, 3) - x[1])
-   * }, nlopt.Vector.fromArray([1e-8, 1e-8]))
+   * }, nlopt.Vector.fromArray([1e-8, 1e-8]));
    */
-  addInequalityMConstraint(fun, tol) {}
+  addInequalityMConstraint(fun, tol) { }
 
   /**
    * Add a vector valued equality constraints. The parameters are the same as 'addInequalityMConstraint'
    * @param {Function} fun - Constraint function
    * @param {Array} tol - Tolerance
    */
-  addEqualityConstraint(fun, tol) {}
+  addEqualityMConstraint(fun, tol) { }
 
   /**
    * Set a max time stopping criterion
    * @param {number} t - Max optimisation time
    */
-  setMaxtime(t) {}
+  setMaxtime(t) { }
 
   /**
    * Set a max evaluation stopping criterion
    * @param {number} eval - Max evalutation count
    */
-  setMaxeval(eval) {}
+  setMaxeval(eval) { }
+
+  /**
+   * Run the optimizer, and returns upon completion an object containing the optimized values of the optimization parameters as well as the corresponding value of the objective function
+   * @param {Array} x0 - Initial guess for the optimization parameters
+   * @returns {Object} - { x: number[], value: number }
+   * @example
+   * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
+   * opt.setMinObjective((x, grad) => {
+   *   if (grad) {
+   *     grad[0] = 0
+   *     grad[1] = 0.5 / Math.sqrt(x[1])
+   *   }
+   *   return Math.sqrt(x[1])
+   * }, 1e-4);
+   * opt.setLowerBounds([-1e500, 1e-8]);
+   * const p1 = { a: 2, b: 0 };
+   * const p2 = { a: -1, b: 1 };
+   * opt.addEqualityMConstraint((x, grad, r) => {
+   *   if (grad) {
+   *     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2)
+   *     grad[1] = -1.0
+   *     grad[2] = 3 * p2.a * Math.pow(p2.a * x[0] + p2.b, 2)
+   *     grad[3] = -1.0
+   *   }
+   *   r[0] = (Math.pow(p1.a * x[0] + p1.b, 3) - x[1])
+   *   r[1] = (Math.pow(p2.a * x[0] + p2.b, 3) - x[1])
+   * }, [1e-8, 1e-8]);
+   * const res = opt.optimize([1, 6]);
+   * return res;
+   */
+  optimize(x0) { }
 }
