@@ -1,10 +1,10 @@
 /* eslint-disable */
 import nlopt_gen from '../build/nlopt_gen.js'
-import wasm from '../build/nlopt_gen.wasm'  // Comment out for local testing
+// import wasm from '../build/nlopt_gen.wasm'  // Comment out for local testing
 import GC from './GC.mjs'
 
 const Module = nlopt_gen({
-  wasmBinary: wasm // Comment out for local testing
+  // wasmBinary: wasm // Comment out for local testing
 });
 
 /**

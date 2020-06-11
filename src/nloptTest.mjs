@@ -1,11 +1,11 @@
-import nlopt from '../dist/index.js'
-// import nlopt from './nlopt.mjs'
+// import nlopt from '../dist/index.js'
+import nlopt from './nlopt.mjs'
 
 function test() {
   // JS 
   // LD_SLSQP (all) LD_AUGLAG (w/ LD_LBFGS, LD_MMA, LD_COBYLA) (LD_AUGLAG_EQ for MMA | COBYLA)
   const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
-  opt.set_min_objective(nlopt.ScalarFunction.fromLambda((x, grad) => {
+  opt.setMinObjective(nlopt.ScalarFunction.fromLambda((x, grad) => {
     if (grad) {
       grad[0] = 0
       grad[1] = 0.5 / Math.sqrt(x[1])
@@ -14,7 +14,7 @@ function test() {
   }), 1e-4)
 
   // const p1 = { a: 2, b: 0 }
-  // opt.add_inequality_constraint(nlopt.ScalarFunction.fromLambda((x, grad) => {
+  // opt.addInequalityConstraint(nlopt.ScalarFunction.fromLambda((x, grad) => {
   //   if (grad) {
   //     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2)
   //     grad[1] = -1.0
@@ -23,7 +23,7 @@ function test() {
   // }), 1e-8)
 
   // const p2 = { a: -1, b: 1 }
-  // opt.add_inequality_constraint(nlopt.ScalarFunction.fromLambda((x, grad) => {
+  // opt.addInequalityConstraint(nlopt.ScalarFunction.fromLambda((x, grad) => {
   //   if (grad) {
   //     grad[0] = 3 * p2.a * Math.pow(p2.a * x[0] + p2.b, 2)
   //     grad[1] = -1.0
@@ -34,7 +34,7 @@ function test() {
   // Vector constraint
   const p1 = { a: 2, b: 0 }
   const p2 = { a: -1, b: 1 }
-  opt.add_equality_mconstraint(nlopt.VectorFunction.fromLambda((x, grad, r) => {
+  opt.addEqualityMConstraint(nlopt.VectorFunction.fromLambda((x, grad, r) => {
     if (grad) {
       grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2)
       grad[1] = -1.0
@@ -46,11 +46,11 @@ function test() {
   }), nlopt.Vector.fromArray([1e-8, 1e-8]))
 
 
-  opt.set_lower_bounds(nlopt.Vector.fromArray([-1e500, 1e-8]))
+  opt.setLowerBounds(nlopt.Vector.fromArray([-1e500, 1e-8]))
 
   // Create local optimizer
   const localOpt = new nlopt.Optimize(nlopt.Algorithm.LD_LBFGS, 2);
-  opt.set_local_optimizer(localOpt);
+  opt.setLocalOptimizer(localOpt);
 
 
   const res = opt.optimize(nlopt.Vector.fromArray([1.234, 5.678]))

@@ -109,6 +109,12 @@ public:
     opt.set_xtol_rel(xtol);
   }
 
+  void set_max_objective(ScalarFunction &scalarFunction, double xtol)
+  {
+    opt.set_max_objective(ScalarFunction::_value, &scalarFunction);
+    opt.set_xtol_rel(xtol);
+  }
+
   void add_inequality_constraint(ScalarFunction &scalarFunction, double tol)
   {
     opt.add_inequality_constraint(ScalarFunction::_value, &scalarFunction, tol);
