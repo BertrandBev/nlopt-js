@@ -1,10 +1,10 @@
 /* eslint-disable */
 import nlopt_gen from '../build/nlopt_gen.js'
-// import wasm from '../build/nlopt_gen.wasm'  // Comment out for local testing
+import wasm from '../build/nlopt_gen.wasm'  // Comment out for local testing
 import GC from './GC.mjs'
 
 const Module = nlopt_gen({
-  // wasmBinary: wasm // Comment out for local testing
+  wasmBinary: wasm // Comment out for local testing
 });
 
 /**
@@ -69,10 +69,9 @@ function addHelpers(nlopt) {
         if (rep == nlopt.Vector)
           args[k] = nlopt.Vector.fromArray(args[k]);
         if (rep == nlopt.VectorFunction)
-          args[k] == nlopt.VectorFunction.fromLambda(args[k]);
-        if (rep == nlopt.ScalarFunction) {
+          args[k] = nlopt.VectorFunction.fromLambda(args[k]);
+        if (rep == nlopt.ScalarFunction)
           args[k] = nlopt.ScalarFunction.fromLambda(args[k]);
-        }
       }
       const rtn = fun.call(this, ...args);
       if (method == 'optimize' && rtn.x instanceof nlopt.Vector)

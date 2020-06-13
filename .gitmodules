@@ -1,0 +1,6 @@
+[submodule "vue-live-docs"]
+	path = vue-live-docs
+	url = https://github.com/BertrandBev/vue-live-docs
+[submodule "demo/lib/vue-live-docs"]
+	path = demo/lib/vue-live-docs
+	url = https://github.com/BertrandBev/vue-live-docs

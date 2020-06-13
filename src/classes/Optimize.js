@@ -8,6 +8,7 @@ class Optimize {
    * @param {number} n - Dimensionality of the problem (number of optimization parameters)
    * @example
    * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
+   * return opt;
    */
   constructor(algorithm, n) { }
 
@@ -23,13 +24,14 @@ class Optimize {
    * @param {number} tol - Maximization tolerance
    * @example
    * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
-   * opt.setMinObjective((x, grad) => {
+   * opt.setMaxObjective((x, grad) => {
    *   if (grad) {
-   *     grad[0] = 0
-   *     grad[1] = 0.5 / Math.sqrt(x[1])
+   *     grad[0] = 0;
+   *     grad[1] = 0.5 / Math.sqrt(x[1]);
    *   }
-   *   return Math.sqrt(x[1])
+   *   return Math.sqrt(x[1]);
    * }, 1e-4);
+   * return opt;
    */
   setMaxObjective(fun, tol) { }
 
@@ -47,6 +49,7 @@ class Optimize {
    * @example
    * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
    * opt.setUpperBounds([2, 5]);
+   * return opt;
    */
   setUpperBounds(bounds) { }
 
@@ -56,6 +59,7 @@ class Optimize {
    * @example
    * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
    * opt.setLowerBounds([-2, -5]);
+   * return opt;
    */
   setLowerBounds(bounds) { }
 
@@ -65,14 +69,15 @@ class Optimize {
    * @param {number} tol - Tolerance
    * @example
    * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
-   * const p1 = { a: 2, b: 0 }
+   * const p1 = { a: 2, b: 0 };
    * opt.addInequalityConstraint((x, grad) => {
    *   if (grad) {
-   *     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2)
-   *     grad[1] = -1.0
+   *     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2);
+   *     grad[1] = -1.0;
    *   }
-   *   return (Math.pow(p1.a * x[0] + p1.b, 3) - x[1])
+   *   return (Math.pow(p1.a * x[0] + p1.b, 3) - x[1]);
    * }, 1e-8);
+   * return opt;
    */
   addInequalityConstraint(fun, tol) { }
 
@@ -95,18 +100,19 @@ class Optimize {
    * @param {Array} tol - Tolerance array, one per constraint
    * @example
    * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
-   * const p1 = { a: 2, b: 0 }
-   * const p2 = { a: -1, b: 1 }
+   * const p1 = { a: 2, b: 0 };
+   * const p2 = { a: -1, b: 1 };
    * opt.addEqualityMConstraint((x, grad, r) => {
    *   if (grad) {
-   *     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2)
-   *     grad[1] = -1.0
-   *     grad[2] = 3 * p2.a * Math.pow(p2.a * x[0] + p2.b, 2)
-   *     grad[3] = -1.0
+   *     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2);
+   *     grad[1] = -1.0;
+   *     grad[2] = 3 * p2.a * Math.pow(p2.a * x[0] + p2.b, 2);
+   *     grad[3] = -1.0;
    *   }
-   *   r[0] = (Math.pow(p1.a * x[0] + p1.b, 3) - x[1])
-   *   r[1] = (Math.pow(p2.a * x[0] + p2.b, 3) - x[1])
-   * }, nlopt.Vector.fromArray([1e-8, 1e-8]));
+   *   r[0] = (Math.pow(p1.a * x[0] + p1.b, 3) - x[1]);
+   *   r[1] = (Math.pow(p2.a * x[0] + p2.b, 3) - x[1]);
+   * }, [1e-8, 1e-8]);
+   * return opt;
    */
   addInequalityMConstraint(fun, tol) { }
 
@@ -125,9 +131,9 @@ class Optimize {
 
   /**
    * Set a max evaluation stopping criterion
-   * @param {number} eval - Max evalutation count
+   * @param {number} count - Max evalutation count
    */
-  setMaxeval(eval) { }
+  setMaxeval(count) { }
 
   /**
    * Run the optimizer, and returns upon completion an object containing the optimized values of the optimization parameters as well as the corresponding value of the objective function
@@ -137,26 +143,26 @@ class Optimize {
    * const opt = new nlopt.Optimize(nlopt.Algorithm.LD_AUGLAG, 2);
    * opt.setMinObjective((x, grad) => {
    *   if (grad) {
-   *     grad[0] = 0
-   *     grad[1] = 0.5 / Math.sqrt(x[1])
+   *     grad[0] = 0;
+   *     grad[1] = 0.5 / Math.sqrt(x[1]);
    *   }
-   *   return Math.sqrt(x[1])
+   *   return Math.sqrt(x[1]);
    * }, 1e-4);
    * opt.setLowerBounds([-1e500, 1e-8]);
    * const p1 = { a: 2, b: 0 };
    * const p2 = { a: -1, b: 1 };
    * opt.addEqualityMConstraint((x, grad, r) => {
    *   if (grad) {
-   *     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2)
-   *     grad[1] = -1.0
-   *     grad[2] = 3 * p2.a * Math.pow(p2.a * x[0] + p2.b, 2)
-   *     grad[3] = -1.0
+   *     grad[0] = 3 * p1.a * Math.pow(p1.a * x[0] + p1.b, 2);
+   *     grad[1] = -1.0;
+   *     grad[2] = 3 * p2.a * Math.pow(p2.a * x[0] + p2.b, 2);
+   *     grad[3] = -1.0;
    *   }
-   *   r[0] = (Math.pow(p1.a * x[0] + p1.b, 3) - x[1])
-   *   r[1] = (Math.pow(p2.a * x[0] + p2.b, 3) - x[1])
+   *   r[0] = (Math.pow(p1.a * x[0] + p1.b, 3) - x[1]);
+   *   r[1] = (Math.pow(p2.a * x[0] + p2.b, 3) - x[1]);
    * }, [1e-8, 1e-8]);
    * const res = opt.optimize([1, 6]);
-   * return res;
+   * return {x: res.x, value: res.value};
    */
   optimize(x0) { }
 }
