@@ -1,6 +1,6 @@
 {
   "name": "nlopt-js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "NLopt-js is a port of [NLopt](https://nlopt.readthedocs.io/en/latest/) C++ optimization library",
   "main": "dist/index.js",
   "files": [

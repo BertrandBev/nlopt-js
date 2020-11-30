@@ -8,17 +8,17 @@ const Module = nlopt_gen({
 });
 
 /**
- * Add helper functions TODO: extract in file
+ * Add helper functions TODO: remove
  */
-function addHelpers(nlopt) {
+function addHelpers(module, nlopt) {
   // Vector helper
-  nlopt.Vector.fromArray = function (arr) {
-    const v = new nlopt.Vector();
+  module.Vector.fromArray = function (arr) {
+    const v = new module.Vector();
     arr.forEach(val => v.push_back(val));
     return v;
   }
 
-  nlopt.Vector.toArray = function (vec) {
+  module.Vector.toArray = function (vec) {
     const a = new Array(vec.size());
     for (let k = 0; k < vec.size(); k++)
       a[k] = vec.get(k);
@@ -26,8 +26,8 @@ function addHelpers(nlopt) {
   }
 
   // Scalar function helper
-  nlopt.ScalarFunction.fromLambda = (fun) => {
-    return nlopt.ScalarFunction.implement({
+  module.ScalarFunction.fromLambda = (fun) => {
+    return module.ScalarFunction.implement({
       value: (n, xPtr, gradPtr) => {
         const x = new Float64Array(nlopt.HEAPF64.buffer, xPtr, n);
         const grad = gradPtr ? new Float64Array(nlopt.HEAPF64.buffer, gradPtr, n) : null;
@@ -37,8 +37,8 @@ function addHelpers(nlopt) {
   }
 
   // Scalar function helper
-  nlopt.VectorFunction.fromLambda = (fun) => {
-    return nlopt.VectorFunction.implement({
+  module.VectorFunction.fromLambda = (fun) => {
+    return module.VectorFunction.implement({
       value: (m, rPtr, n, xPtr, gradPtr) => {
         const x = new Float64Array(nlopt.HEAPF64.buffer, xPtr, n);
         const r = new Float64Array(nlopt.HEAPF64.buffer, rPtr, m);
@@ -49,33 +49,33 @@ function addHelpers(nlopt) {
   }
 
   // Simplify arguments syntax of certain functions
-  const pipes = {
-    setLowerBounds: [nlopt.Vector],
-    setUpperBounds: [nlopt.Vector],
-    setMinObjective: [nlopt.ScalarFunction, null],
-    setMaxObjective: [nlopt.ScalarFunction, null],
-    addInequalityConstraint: [nlopt.ScalarFunction, null],
-    addEqualityConstraint: [nlopt.ScalarFunction, null],
-    addInequalityMConstraint: [nlopt.VectorFunction, nlopt.Vector],
-    addEqualityMConstraint: [nlopt.VectorFunction, nlopt.Vector],
-    optimize: [nlopt.Vector],
+  const argsTranformMap = {
+    setLowerBounds: [module.Vector],
+    setUpperBounds: [module.Vector],
+    setMinObjective: [module.ScalarFunction, null],
+    setMaxObjective: [module.ScalarFunction, null],
+    addInequalityConstraint: [module.ScalarFunction, null],
+    addEqualityConstraint: [module.ScalarFunction, null],
+    addInequalityMConstraint: [module.VectorFunction, module.Vector],
+    addEqualityMConstraint: [module.VectorFunction, module.Vector],
+    optimize: [module.Vector],
   };
-  Object.keys(pipes).forEach((method) => {
-    const pipe = pipes[method];
+  Object.keys(argsTranformMap).forEach((method) => {
+    const argsTransform = argsTranformMap[method];
     const fun = nlopt.Optimize.prototype[method]
     nlopt.Optimize.prototype[method] = function (...args) {
       for (let k = 0; k < args.length; k++) {
-        const rep = pipe[k];
-        if (rep == nlopt.Vector)
-          args[k] = nlopt.Vector.fromArray(args[k]);
-        if (rep == nlopt.VectorFunction)
-          args[k] = nlopt.VectorFunction.fromLambda(args[k]);
-        if (rep == nlopt.ScalarFunction)
-          args[k] = nlopt.ScalarFunction.fromLambda(args[k]);
+        const argTransform = argsTransform[k];
+        if (argTransform == module.Vector)
+          args[k] = module.Vector.fromArray(args[k]);
+        else if (argTransform == module.VectorFunction)
+          args[k] = module.VectorFunction.fromLambda(args[k]);
+        else if (argTransform == module.ScalarFunction)
+          args[k] = module.ScalarFunction.fromLambda(args[k]);
       }
       const rtn = fun.call(this, ...args);
-      if (method == 'optimize' && rtn.x instanceof nlopt.Vector)
-        rtn.x = nlopt.Vector.toArray(rtn.x);
+      if (method == 'optimize' && rtn.x instanceof module.Vector)
+        rtn.x = module.Vector.toArray(rtn.x);
       return rtn;
     }
   });
@@ -86,19 +86,17 @@ const nlopt = {
 }
 
 nlopt.ready = Module.then(module => {
+  // Publish classes
   const classes = new Set([
-    "Vector",
     "Optimize",
-    "ScalarFunction",
-    "VectorFunction",
   ])
   classes.forEach(className => {
     nlopt[className] = GC.initClass(classes, module[className])
   })
-  // TODO: create enum list?
+  // Publish enums
   nlopt.Algorithm = module.Algorithm
   nlopt.HEAPF64 = module.HEAPF64
-  addHelpers(nlopt);
+  addHelpers(module, nlopt);
 })
 
 export default nlopt

@@ -1,8 +1,0 @@
-.DS_Store
-.vscode/
-node_modules/
-yarn.lock
-lib
-test
-build
-dist
