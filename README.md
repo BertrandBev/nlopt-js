@@ -24,10 +24,12 @@ yarn add nlopt-js
 ```
 
 In a node application or in the browser (using [webpack](https://webpack.js.org/))
+(This example can be found under ./example)
 
 ```js
-const nlopt = require('nlopt-js')
-// ES6: import nlopt from 'nlopt-js'
+// test.mjs
+import nlopt from 'nlopt-js'
+
 (async () => {
   await nlopt.ready
   const opt = new nlopt.Optimize(nlopt.Algorithm.LD_SLSQP, 2);
@@ -39,6 +41,7 @@ const nlopt = require('nlopt-js')
     return Math.sqrt(x[1]);
   }, 1e-4);
   const res = opt.optimize([1, 6]);
+  console.log(res);
   // Flush the GC
   nlopt.GC.flush();
 })();
